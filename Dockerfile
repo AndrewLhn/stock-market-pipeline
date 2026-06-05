@@ -8,7 +8,7 @@ RUN apt-get update \
        git \
     && apt-get autoremove -yqq --purge \
     && apt-get clean \
-    rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/*
 
 USER airflow
 
