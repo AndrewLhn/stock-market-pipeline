@@ -6,6 +6,7 @@ try:
 except ModuleNotFoundError:
     subprocess.check_call([sys.executable, "-m", "pip", "install", "yfinance"])
     import yfinance as yf
+
 from datetime import datetime, timedelta
 import logging
 import os
@@ -22,8 +23,7 @@ TICKERS = ['AAPL', 'MSFT', 'TSLA', 'GOOGL', 'AMZN', 'NVDA', 'META', 'AMD', 'NFLX
 default_args = {
     'owner': 'data_engineer',
     'depends_on_past': False,
-    'start_date': datetime(2026, 6, 1),  # Симуляция начнется с 1 июня 2026 года
-    'retries': 1,
+    'start_date': datetime(2026, 1, 1),  
     'retry_delay': timedelta(minutes=5),
 }
 
@@ -40,7 +40,7 @@ def extract_and_load_to_s3(ds, **kwargs):
         logging.info(f"Fetching data for {ticker} for date {ds} via yfinance")
         try:
             df = yf.download(ticker, start=start_str, end=end_str, progress=False)
-            
+               
             if not df.empty:
                 if isinstance(df.columns, pd.MultiIndex):
                     df.columns = df.columns.droplevel(1)
@@ -71,3 +71,30 @@ def extract_and_load_to_s3(ds, **kwargs):
         region_name='us-east-1'
     )
     
+    year, month, day = ds.split('-')
+    s3_key = f"raw/year={year}/month={month}/day={day}/stocks.csv"
+    
+    csv_buffer = StringIO()
+    final_df.to_csv(csv_buffer, index=False)
+    
+    bucket_name = 'stock-market-data'
+    s3_client.put_object(
+        Bucket=bucket_name,
+        Key=s3_key,
+        Body=csv_buffer.getvalue()
+    )
+    logging.info(f"Successfully uploaded data to s3://{bucket_name}/{s3_key}")
+
+with DAG(
+    'stock_market_pipeline',
+    default_args=default_args,
+    description='Извлечение данных акций через yfinance и загрузка в S3 (MinIO)',
+    schedule_interval='@daily',
+    catchup=True,  
+    max_active_runs=2,
+) as dag:
+
+    extract_task = PythonOperator(
+        task_id='extract_and_load_to_s3',
+        python_callable=extract_and_load_to_s3,
+    )
