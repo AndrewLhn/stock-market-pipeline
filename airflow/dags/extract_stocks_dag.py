@@ -23,7 +23,7 @@ TICKERS = ['AAPL', 'MSFT', 'TSLA', 'GOOGL', 'AMZN', 'NVDA', 'META', 'AMD', 'NFLX
 default_args = {
     'owner': 'data_engineer',
     'depends_on_past': False,
-    'start_date': datetime(2026, 1, 1),  
+    'start_date': datetime(2024, 1, 1),  
     'retry_delay': timedelta(minutes=5),
 }
 
