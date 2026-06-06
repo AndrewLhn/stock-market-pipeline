@@ -54,11 +54,12 @@ def extract_and_load_to_s3(ds, **kwargs):
         
     final_df = pd.concat(combined_data, ignore_index=True)
     
+    import os
     s3_client = boto3.client(
         's3',
         endpoint_url='http://minio:9000',
-        aws_access_key_id='minio_admin',      
-        aws_secret_access_key='minio_password_123',
+        aws_access_key_id=os.getenv('AWS_ACCESS_KEY_ID'),
+        aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY'),
         region_name='us-east-1'
     )
     
