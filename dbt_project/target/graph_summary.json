@@ -1,1 +1,1 @@
-{"_invocation_id": "2dd3b146-f79a-4a5d-849c-b412c1a5db9c", "linked": {"0": {"name": "model.stock_analytics.stg_stocks", "type": "model"}}}
+{"_invocation_id": "6feae970-53af-47f4-aade-d01975094145", "linked": {"0": {"name": "model.stock_analytics.fct_stock_performance", "type": "model"}, "1": {"name": "model.stock_analytics.stg_stocks", "type": "model", "succ": [0]}}}
