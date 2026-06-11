@@ -1,4 +1,12 @@
-{{ config(materialized='table') }}
+{{ config(
+    materialized='table',
+    post_hook=[
+        "INSTALL postgres;",
+        "LOAD postgres;",
+        "ATTACH 'host=metabase-db user=metabase_user password=metabase_pass_456 dbname=metabase' AS metabase_pg (TYPE POSTGRES);",
+        "CREATE OR REPLACE TABLE metabase_pg.public.fct_stock_performance AS SELECT * FROM {{ this }};"
+    ]
+) }}
 
 with staging_data as (
     select * from {{ ref('stg_stocks') }}
@@ -14,20 +22,9 @@ calculated_metrics as (
         close_price,
         volume,
         close_price * volume as turnover_usd,
-        
         lag(close_price) over (partition by ticker order by trading_date) as prev_close_price,
-        
-        avg(close_price) over (
-            partition by ticker 
-            order by trading_date 
-            rows between 2 preceding and current row
-        ) as moving_avg_3d,
-
-        avg(close_price) over (
-            partition by ticker 
-            order by trading_date 
-            rows between 6 preceding and current row
-        ) as moving_avg_7d
+        avg(close_price) over (partition by ticker order by trading_date rows between 2 preceding and current row) as moving_avg_3d,
+        avg(close_price) over (partition by ticker order by trading_date rows between 6 preceding and current row) as moving_avg_7d
     from staging_data
 )
 
