@@ -1,1 +1,1 @@
-{"_invocation_id": "ec2183ef-360a-47a5-8535-9c713f1c21df", "linked": {"0": {"name": "model.stock_analytics.stg_stocks", "type": "model", "succ": [1]}, "1": {"name": "model.stock_analytics.fct_stock_performance", "type": "model"}}}
+{"_invocation_id": "7ec35c9a-e13b-47da-8f6d-c2a1f8b23ce5", "linked": {"0": {"name": "model.stock_analytics.stg_stocks", "type": "model", "succ": [1]}, "1": {"name": "model.stock_analytics.fct_stock_performance", "type": "model"}}}

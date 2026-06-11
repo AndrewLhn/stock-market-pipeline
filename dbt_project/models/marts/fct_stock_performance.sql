@@ -1,12 +1,4 @@
-{{ config(
-    materialized='table',
-    post_hook=[
-        "INSTALL postgres;",
-        "LOAD postgres;",
-        "ATTACH 'host=metabase-db user=metabase_user password=metabase_pass_456 dbname=metabase' AS metabase_pg (TYPE POSTGRES);",
-        "CREATE OR REPLACE TABLE metabase_pg.public.fct_stock_performance AS SELECT * FROM {{ this }};"
-    ]
-) }}
+{{ config(materialized='table') }}
 
 with staging_data as (
     select * from {{ ref('stg_stocks') }}
