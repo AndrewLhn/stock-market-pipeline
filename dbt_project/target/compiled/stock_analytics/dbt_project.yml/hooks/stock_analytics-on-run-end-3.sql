@@ -1,1 +1,1 @@
-CREATE OR REPLACE TABLE metabase_pg.public.fct_stock_performance AS SELECT * FROM main.fct_stock_performance;
+DROP TABLE IF EXISTS metabase_pg.public.fct_stock_performance;

@@ -19,7 +19,8 @@ on-run-end:
   - "INSTALL postgres;"
   - "LOAD postgres;"
   - "ATTACH 'host=metabase-db user=metabase_user password=metabase_pass_456 dbname=metabase' AS metabase_pg (TYPE POSTGRES);"
-  - "CREATE OR REPLACE TABLE metabase_pg.public.fct_stock_performance AS SELECT * FROM main.fct_stock_performance;"
+  - "DROP TABLE IF EXISTS metabase_pg.public.fct_stock_performance;"
+  - "CREATE TABLE metabase_pg.public.fct_stock_performance AS SELECT * FROM main.fct_stock_performance;"
 
 models:
   stock_analytics:

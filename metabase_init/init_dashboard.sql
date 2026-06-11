@@ -1,4 +1,4 @@
-INSERT INTO db_connection (id, name, engine, details, created_at, updated_at)
+INSERT INTO metabase_database (id, name, engine, details, created_at, updated_at)
 VALUES (
     99, 
     'Stock Market Analytics', 
@@ -8,15 +8,15 @@ VALUES (
     NOW()
 ) ON CONFLICT (id) DO NOTHING;
 
-INSERT INTO report_dashboard (id, name, description, creator_id, created_at, updated_at, parameters, archival)
+INSERT INTO report_dashboard (id, name, description, creator_id, created_at, updated_at, parameters)
 VALUES (
     1, 
-    'Мониторинг Рынка Акций (Топ-10)', 
-    'Автоматический дашборд для отслеживания цен закрытия и скользящих средних', 
-    1, NOW(), NOW(), '[]', false
+    'Мониторинг Рынка Акций (Авто)', 
+    'Дашборд для отслеживания цен закрытия и скользящих средних, развернутый из кода', 
+    1, NOW(), NOW(), '[]'
 ) ON CONFLICT (id) DO NOTHING;
 
-INSERT INTO report_card (id, name, dataset_query, display, description, creator_id, database_id, table_id, result_metadata, creator_id, created_at, updated_at)
+INSERT INTO report_card (id, name, dataset_query, display, description, creator_id, database_id, table_id, result_metadata, visualization_settings, created_at, updated_at)
 VALUES (
     10, 
     'Динамика цен и Скользящие средние', 
@@ -26,19 +26,20 @@ VALUES (
     1, 
     99, 
     NULL,
-    '[{"name":"trading_date","display_name":"Дата","base_type":"type/Date"},{"name":"close_price","display_name":"Цена закрытия","base_type":"type/Float"}]',
+    '[{"name":"trading_date","display_name":"Дата","base_type":"type/Date"},{"name":"close_price","display_name":"Цена","base_type":"type/Float"}]',
+    '{"graph.dimensions":["trading_date"],"graph.metrics":["close_price","moving_avg_3d","moving_avg_7d"]}',
     NOW(), 
     NOW()
 ) ON CONFLICT (id) DO NOTHING;
 
-INSERT INTO report_dashboardcard (id, dashboard_id, card_id, row, col, size_x, size_y, parameter_bindings)
+INSERT INTO report_dashboardcard (id, dashboard_id, card_id, row, col, size_x, size_y, visualization_settings)
 VALUES (
     100, 
-    1,  
+    1, 
     10, 
     0, 
-    0,  
+    0, 
     18, 
     10, 
-    '[]'
+    '{}'
 ) ON CONFLICT (id) DO NOTHING;

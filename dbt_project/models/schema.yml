@@ -1,0 +1,29 @@
+version: 2
+
+models:
+  - name: fct_stock_performance
+    description: "Финальная витрина данных с показателями акций и скользящими средними"
+    columns:
+      - name: trading_date
+        description: "Дата торгового дня"
+        tests:
+          - not_null
+
+      - name: ticker
+        description: "Биржевой тикер компании"
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['AAPL', 'MSFT', 'NVDA', 'TSLA', 'AMZN', 'BABA', 'NFLX', 'META', 'AMD', 'GOOGL']
+
+      - name: close_price
+        description: "Цена закрытия торгового дня"
+        tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              expression: "> 0"
+
+      - name: moving_avg_3d
+        description: "Скользящее среднее за 3 дня"
+        tests:
+          - not_null

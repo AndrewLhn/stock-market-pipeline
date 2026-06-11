@@ -104,6 +104,7 @@ services:
       - POSTGRES_DB=metabase
     volumes:
       - metabase_db_data:/var/lib/postgresql/data
+      
 
 volumes:
   minio_data:
