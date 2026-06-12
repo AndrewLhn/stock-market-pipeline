@@ -13,10 +13,10 @@ import os
 from io import StringIO
 import pandas as pd
 import boto3
-import yfinance as yf
 
 from airflow import DAG
 from airflow.operators.python import PythonOperator
+from airflow.operators.bash import BashOperator  
 
 TICKERS = ['AAPL', 'MSFT', 'TSLA', 'GOOGL', 'AMZN', 'NVDA', 'META', 'AMD', 'NFLX', 'BABA']
 
@@ -46,11 +46,8 @@ def extract_and_load_to_s3(ds, **kwargs):
                     df.columns = df.columns.droplevel(1)
                 
                 df.columns = [str(col).strip() for col in df.columns]
-                
                 df = df.reset_index()
-                
                 df['ticker'] = ticker
-                
                 combined_data.append(df)
             else:
                 logging.warning(f"No data returned for {ticker} on {ds} (скорее всего, выходной на бирже)")
@@ -88,7 +85,7 @@ def extract_and_load_to_s3(ds, **kwargs):
 with DAG(
     'stock_market_pipeline',
     default_args=default_args,
-    description='Извлечение данных акций через yfinance и загрузка в S3 (MinIO)',
+    description='Извлечение данных акций через yfinance, трансформация в dbt и валидация качества данных',
     schedule_interval='@daily',
     catchup=True,  
     max_active_runs=2,
@@ -98,3 +95,15 @@ with DAG(
         task_id='extract_and_load_to_s3',
         python_callable=extract_and_load_to_s3,
     )
+
+    dbt_run_task = BashOperator(
+        task_id='dbt_run',
+        bash_command='cd /opt/airflow/dbt_project && dbt run --profiles-dir .',
+    )
+
+    dbt_test_task = BashOperator(
+        task_id='dbt_test',
+        bash_command='cd /opt/airflow/dbt_project && dbt test --profiles-dir .',
+    )
+
+    extract_task >> dbt_run_task >> dbt_test_task
