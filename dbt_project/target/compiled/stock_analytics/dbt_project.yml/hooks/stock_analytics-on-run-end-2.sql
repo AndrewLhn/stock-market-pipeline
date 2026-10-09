@@ -1,1 +1,0 @@
-ATTACH 'host=metabase-db user=metabase_user password=metabase_pass_456 dbname=metabase' AS metabase_pg (TYPE POSTGRES);
