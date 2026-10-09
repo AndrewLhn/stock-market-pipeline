@@ -1,96 +1,61 @@
-# 📈 Automated End-to-End Stock Market Analytics Pipeline
+# Market Data Batch Pipeline
 
-This project implements a production-ready, automated data pipeline for financial market analytics using the **Modern Data Stack (MDS)**. It utilizes **Apache Airflow** for orchestration, **MinIO (S3)** as a Data Lake, **DuckDB + dbt** for high-performance computing, **PostgreSQL** as a serving layer, and **Metabase** for production-grade business intelligence.
+A local reference pipeline for daily equity-price ingestion. It writes immutable date partitions to
+MinIO, builds DuckDB models with dbt, and stops the workflow when data-quality checks fail.
 
-The architecture strictly adheres to the **Medallion Architecture** design pattern, ensuring high reliability, strict data quality gating, and data-as-code idempotency.
+~~~text
+yfinance -> Airflow -> MinIO (raw CSV partitions) -> dbt / DuckDB -> analytical mart
+~~~
 
----
+## What is implemented
 
-## 🏗️ System Architecture & Data Flow
-[ Financial API (yfinance) ]
-              │
-              ▼ (Apache Airflow Orchestration)
-┌────────────────────────────────────────────────────────┐
-│  BRONZE LAYER (Data Lake)                              │
-│  - MinIO S3 Bucket: `raw/year=/month=/day=/stocks.csv`  │
-└────────────────────────────────────────────────────────┘
-              │
-              ▼ (dbt run)
-┌────────────────────────────────────────────────────────┐
-│  SILVER LAYER (Staging & Cleaning)                     │
-│  - DuckDB: `stg_stocks` (Type casting & schema lock)   │
-└────────────────────────────────────────────────────────┘
-              │
-              ▼ (dbt transformations & analytics)
-┌────────────────────────────────────────────────────────┐
-│  GOLD LAYER (Marts & Feature Engineering)              │
-│  - DuckDB: `fct_stock_performance` (Moving Averages)   │
-└────────────────────────────────────────────────────────┘
-              │
-              ▼ (dbt test - Data Quality Gate)
-┌────────────────────────────────────────────────────────┐
-│  DATA QUALITY CHECKS                                   │
-│  - Schema rules, Unique constraints, Business validation│
-└────────────────────────────────────────────────────────┘
-              │
-              ▼ (dbt `on-run-end` Hook Replication)
-┌────────────────────────────────────────────────────────┐
-│  SERVING LAYER (Relational Data Warehouse)             │
-│  - PostgreSQL: Production Database                     │
-└────────────────────────────────────────────────────────┘
-              │
-              ▼ (Live Querying)
- [ Metabase Dashboard: Market Trends BI ]
+- Daily Airflow DAG with retries and one active run at a time.
+- Date-partitioned raw files in MinIO: `raw/year=YYYY/month=MM/day=DD/stocks.csv`.
+- Re-running a logical date overwrites only that date's object, making ingestion idempotent.
+- Configurable ticker universe through `STOCK_TICKERS`.
+- dbt staging and fact models for OHLCV, turnover, daily return, and 3/7-day moving averages.
+- dbt tests are executed with `dbt build` after successful ingestion.
+- A no-data trading day skips downstream transformation instead of writing an empty partition.
 
- ---
+## Local run
 
-## 🔄 Core Workflow Pipeline
+Requirements: Docker Compose and Docker.
 
-### 1. Data Extraction (Ingestion)
-* **Apache Airflow** triggers daily cron jobs to pull stock metrics from external financial sources.
-* Raw snapshots are saved as immutable CSV files into **MinIO S3 API** partitioned by `year/month/day` formatting. This serves as the **Bronze Layer** (Single Source of Truth).
+~~~bash
+cp .env.example .env
+# Replace the placeholder passwords in .env.
+docker compose up -d --build
+~~~
 
-### 2. Transformation Layer (dbt + DuckDB)
-* **Silver Layer:** dbt standardizes naming conventions, strips metadata, casts timestamps, and builds decoupled staging views (`stg_stocks`).
-* **Gold Layer:** Advanced transformations compute rolling 3-day and 7-day moving averages (`moving_avg_3d`, `moving_avg_7d`) alongside key performance indicators.
+Open Airflow at http://localhost:8080 and trigger `stock_market_pipeline`.
+The pipeline reads its configuration from the environment:
 
-### 3. Data Quality Gate (CI/CD Automated Auditing)
-* Production data is rigorously audited using integrated **dbt tests**.
-* Enforced constraints include `not_null` validation on primary keys, `accepted_values` validation on tickers, and semantic tests checking that equity prices remain strictly positive.
+| Variable | Meaning |
+| --- | --- |
+| `STOCK_TICKERS` | Comma-separated list of symbols |
+| `STOCK_DATA_BUCKET` | MinIO bucket for raw partitions |
+| `S3_ENDPOINT_URL` | Object-storage endpoint; defaults to the Compose MinIO service |
 
-### 4. Serving & BI Layer
-* Upon a successful test run, an optimized `on-run-end` dbt macro mirrors data chunks to a remote **PostgreSQL** replica container.
-* **Metabase** maps natively to PostgreSQL tables, running optimized visualization layers without taxing analytical resources inside the DuckDB container.
+## Data model
 
----
+| Model | Purpose |
+| --- | --- |
+| `stg_stocks` | Typed raw market records read from object storage |
+| `fct_stock_performance` | Daily prices, turnover, returns, and rolling averages |
 
-## 🛠️ Tech Stack & Infrastructure
+The current mart intentionally covers a small, explicit ticker universe. It is not investment
+advice and should not be treated as a real-time market-data service.
 
-* **Orchestration:** Apache Airflow v2.x
-* **Storage (Object / OLAP):** MinIO (S3 API) & DuckDB (In-Memory Processing Engine)
-* **Data Transformation:** dbt-core v1.11+ (with custom analytics macros)
-* **Database (Serving Node):** PostgreSQL v15+
-* **Data Visualization:** Metabase (Dashboard-as-Code ecosystem)
-* **Containerization:** Docker & Docker Compose
+## Operational notes
 
----
+- The DAG has `catchup=False`. Use a deliberate Airflow backfill when historical dates must be
+  replayed.
+- dbt artifacts, local DuckDB files, logs, credentials, and Terraform state are ignored by Git.
+- The repository currently supports local Docker Compose execution. Cloud deployment, alerting,
+  and a managed serving layer are deliberately out of scope until they are implemented and tested.
 
-## 🚀 Quick Start / Local Deployment
+## Next engineering increments
 
-### Prerequisites
-* Docker & Docker Compose installed on your local host engine.
-* Python v3.10+ (for local environment venv testing).
-
-### Step 1: Clone the Repo & Initialize Infrastructure
-
-git clone [https://github.com/your-username/stock-market-pipeline.git](https://github.com/your-username/stock-market-pipeline.git)
-cd stock-market-pipeline
-
-# Spin up all microservices in background detached mode
-docker-compose up -d
-
-# Execute dbt Run inside Scheduler Node
-docker-compose exec airflow-scheduler bash -c "cd /opt/airflow/dbt_project && dbt run --profiles-dir ."
-
-# Execute Automated Quality Tests
-docker-compose exec airflow-scheduler bash -c "cd /opt/airflow/dbt_project && dbt test --profiles-dir ."
+1. Add a source-freshness and ticker-completeness mart.
+2. Add a parameterised backfill command with a reconciliation report.
+3. Add CI that validates the DAG import and runs dbt against fixture data.
