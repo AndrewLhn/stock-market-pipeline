@@ -1,30 +1,17 @@
-name: 'stock_analytics'
-version: '1.0.0'
+name: stock_analytics
+version: "1.0.0"
 config-version: 2
 
-profile: 'stock_analytics_profile'
+profile: stock_analytics_profile
 
 model-paths: ["models"]
-analysis-paths: ["analyses"]
 test-paths: ["tests"]
-seed-paths: ["seeds"]
 macro-paths: ["macros"]
-snapshot-paths: ["snapshots"]
-
-clean-targets:
-  - "target"
-  - "dbt_packages"
-  
-on-run-end:
-  - "INSTALL postgres;"
-  - "LOAD postgres;"
-  - "ATTACH 'host=metabase-db user=metabase_user password=metabase_pass_456 dbname=metabase' AS metabase_pg (TYPE POSTGRES);"
-  - "DROP TABLE IF EXISTS metabase_pg.public.fct_stock_performance;"
-  - "CREATE TABLE metabase_pg.public.fct_stock_performance AS SELECT * FROM main.fct_stock_performance;"
+clean-targets: ["target", "dbt_packages", "logs"]
 
 models:
   stock_analytics:
     staging:
-      +materialized: view 
+      +materialized: view
     marts:
-      +materialized: table 
+      +materialized: table
