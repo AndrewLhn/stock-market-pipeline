@@ -1,1 +1,5 @@
-yfinance>=0.2.40
+boto3==1.35.99
+dbt-core==1.8.9
+dbt-duckdb==1.8.4
+pandas==2.2.3
+yfinance==0.2.54
