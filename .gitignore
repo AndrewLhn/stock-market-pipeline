@@ -1,25 +1,53 @@
+# Environment and credentials
 .env
+.env.*
+!.env.example
 *.env.local
+
+# Python
 __pycache__/
 *.py[cod]
 *$py.class
 venv/
 .env/
 .venv/
+.pytest_cache/
+.ruff_cache/
+
+# Editor and OS files
 .vscode/
 .idea/
 *.swp
 *.swo
+.DS_Store
+Thumbs.db
+
+# Runtime data and logs
+airflow/logs/
+airflow/plugins/
+logs/
+*.log
 storage/
-*.duckdb
-*.duckdb.wal
 tmp/
 checkpoints/
 spark-warehouse/
-terraform/*.tfstate*
-terraform/.terraform/
+
+# Local analytical databases
+*.duckdb
+*.duckdb.wal
+
+# dbt build artifacts
+dbt_project/target/
+dbt_project/dbt_packages/
+dbt_project/logs/
+
+# Terraform
+*.tfstate
+*.tfstate.*
+.terraform/
+*.tfvars
+*.tfvars.json
+crash.log
+
+# Local Compose overrides
 docker-compose.override.yml
-*.log
-logs/
-.DS_Store
-Thumbs.db
