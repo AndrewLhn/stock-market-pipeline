@@ -1,1 +1,0 @@
-CREATE TABLE metabase_pg.public.fct_stock_performance AS SELECT * FROM main.fct_stock_performance;
